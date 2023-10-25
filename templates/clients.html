@@ -1,0 +1,149 @@
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const switches = document.querySelectorAll('input[type="checkbox"]');
+        switches.forEach(sw => {
+            sw.addEventListener('change', function() {
+                const username = this.dataset.username;
+                fetch(`/toggle/${username}`, {
+                    method: 'POST',
+                });
+            });
+        });
+
+        const deleteButtons = Array.from(document.querySelectorAll('button')).filter(btn => btn.textContent === 'Delete');
+        deleteButtons.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const username = this.closest('tr').querySelector('td').textContent;
+                fetch(`/delete/${username}`, {
+                    method: 'POST',
+                }).then(() => {
+                    location.reload();
+                });
+            });
+        });
+
+        const editButtons = Array.from(document.querySelectorAll('button')).filter(btn => btn.textContent === 'Edit');
+        editButtons.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const username = this.closest('tr').querySelector('td').textContent;
+                document.getElementById('editUsername').value = username;
+                document.getElementById('editPassword').value = '';
+                document.getElementById('editModal').style.display = 'block';
+            });
+        });
+
+        document.getElementById('saveBtn').addEventListener('click', function() {
+            const username = document.getElementById('editUsername').value;
+            const password = document.getElementById('editPassword').value;
+            fetch(`/saveUser`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username, password })
+            }).then(() => {
+                location.reload();
+            });
+        });
+        
+        document.getElementById('closeBtn').addEventListener('click', function() {
+            document.getElementById('editModal').style.display = 'none';
+        });
+
+        document.getElementById('createSaveBtn').addEventListener('click', function() {
+            const username = document.getElementById('createUsername').value;
+            const password = document.getElementById('createPassword').value;
+            fetch(`/createUser`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username, password })
+            }).then(response => {
+                if(response.ok) {
+                    location.reload();
+                } else {
+                    alert('Error creating user. Maybe user already exists.');
+                }
+            });
+        });
+                
+        document.getElementById('createCloseBtn').addEventListener('click', function() {
+            document.getElementById('createModal').style.display = 'none';
+        });
+
+        document.getElementById('createUserBtn').addEventListener('click', function() {
+            document.getElementById('createModal').style.display = 'block';
+        });
+    });
+</script>
+
+<html>
+<head>
+    <title>SQUID UI</title>
+    <link href="./templates/styles.css" rel="stylesheet">
+</head>
+<body>
+
+<h1>Squid Users:</h1>
+<a href="/logout">Logout</a>
+
+<h2>Clients</h2>
+
+<table>
+    <tr>
+        <th>Name</th>
+        <th>Actions</th>
+    </tr>
+    {{range .users}}
+    <tr>
+        <td>{{.Name}}</td>
+        <td>
+            <label class="switch">
+                <input type="checkbox" {{if .IsActive}}checked{{end}} data-username="{{.Name}}">
+                <span class="slider round"></span>
+            </label>
+            <button>Edit</button>
+            <button>Delete</button>
+        </td>
+    </tr>
+    {{end}}
+</table>
+
+<button id="createUserBtn">+ New</button>
+
+
+<footer>
+    Made by ckazi - <a href="https://github.com/ckazi">GitHub</a>
+</footer>
+
+
+<div id="editModal" style="display:none; position:fixed; top:20%; left:30%; width:40%; padding:20px; background-color:white; border:1px solid black;">
+    <h2>Edit User</h2>
+    <label>
+        Username:
+        <input type="text" id="editUsername" readonly />
+    </label>
+    <br>
+    <label>
+        Password:
+        <input type="password" id="editPassword" />
+    </label>
+    <br><br>
+    <button id="saveBtn">Save</button>
+    <button id="closeBtn">Close</button>
+</div>
+
+<div id="createModal" style="display:none;">
+    <label>Username:</label>
+    <input type="text" id="createUsername">
+    <label>Password:</label>
+    <input type="password" id="createPassword">
+    <button id="createSaveBtn">Save</button>
+    <button id="createCloseBtn">Close</button>
+</div>
+
+
+
+</body>
+</html>
