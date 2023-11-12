@@ -53,4 +53,4 @@ The WireGuard Web UI will now be available on `http://0.0.0.0:51821`.
 
 ### 3. Sponsor
 
-Are you enjoying this project? [Buy me a beer!](bitcoin 14rZYabpHSsKKgYvsVcEgmuyR3x9XfR4WA ) 🍻
+Are you enjoying this project? [Buy me a beer!](monero 41ugNNZ5erdfj8ofHFhkb2gtwnpsB25digy6DWP1kCgRTJVbg6p7E6YMWbza7iCSMWaeuk9Qkeqzya8mCQcQDymH7P2tgZ5 ) 🍻
