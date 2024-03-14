@@ -163,6 +163,11 @@ func main() {
 		c.HTML(http.StatusOK, "clients.html", gin.H{"users": users})
 	})
 
+	r.GET("/logout", func(c *gin.Context) {
+		c.Header("WWW-Authenticate", `Basic realm="Authorization Required"`)
+		c.AbortWithStatus(http.StatusUnauthorized)
+	})
+
 	r.POST("/toggle/:name", func(c *gin.Context) {
 		name := c.Param("name")
 		err := toggleUser(name, "config/squid_passwd")

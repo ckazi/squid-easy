@@ -34,12 +34,10 @@ services:
    restart: always
 
   squid:
-    image: ubuntu/squid
+    image: ckazi/squid
     container_name: squid
     ports:
       - "51822:3128"
     volumes:
       - ./config:/etc/squid:ro
-      - ./ERR:/usr/share/squid/errors
-    command: squid -f /etc/squid/squid.conf -N
     restart: always

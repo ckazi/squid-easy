@@ -1,3 +1,75 @@
+<html>
+<head>
+    <title>SQUID UI</title>
+    <link href="./templates/styles.css" rel="stylesheet">
+</head>
+<body>
+
+<h1>Squid Users:</h1>
+
+<table>
+    <tr>
+        <th>Name</th>
+        <th>Actions</th>
+    </tr>
+    {{range .users}}
+    <tr>
+        <td>{{.Name}}</td>
+        <td><div class="actions">
+            <label class="switch">
+                <input type="checkbox" {{if .IsActive}}checked{{end}} data-username="{{.Name}}">
+                <span class="slider round"></span>
+            </label>
+            <button>Edit</button>
+            <button>Delete</button>
+        </div>
+
+        </td>
+    </tr>
+    {{end}}
+</table>
+
+<div class="header-actions">
+    <button id="createUserBtn">+ New</button>
+    <button id="logoutBtn">Logout</button>
+</div>
+
+<footer>
+    Made by ckazi - <a href="https://github.com/ckazi" target="_blank">GitHub</a>
+</footer>
+
+<div id="editModal" style="display:none; position:fixed; top:20%; left:30%; width:14%; padding:20px; background-color:white; border:2px solid black;">
+    <h2>Edit user</h2>
+    <label>
+        Username:
+        <input type="text" id="editUsername" readonly />
+    </label>
+    <br><br>
+    <label>
+        Password:&nbsp;
+        <input type="password" id="editPassword" />
+    </label>
+    <br><br>
+    <button id="saveBtn">Save</button>
+    <button id="closeBtn">Close</button>
+</div>
+
+<div id="createModal" style="display:none; position:fixed; top:20%; left:30%; width:14%; padding:20px; background-color:white; border:2px solid black;">
+    <h2>Add user</h2>
+    <label>
+        Username:
+        <input type="text" id="createUsername" />
+    </label>
+    <br><br>
+    <label>
+        Password:&nbsp;
+        <input type="password" id="createPassword" />
+    </label>
+    <br><br>
+    <button id="createSaveBtn">Add</button>
+    <button id="createCloseBtn">Close</button>
+</div>
+
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const switches = document.querySelectorAll('input[type="checkbox"]');
@@ -45,7 +117,7 @@
                 location.reload();
             });
         });
-        
+
         document.getElementById('closeBtn').addEventListener('click', function() {
             document.getElementById('editModal').style.display = 'none';
         });
@@ -67,83 +139,28 @@
                 }
             });
         });
-                
-        document.getElementById('createCloseBtn').addEventListener('click', function() {
-            document.getElementById('createModal').style.display = 'none';
-        });
 
         document.getElementById('createUserBtn').addEventListener('click', function() {
             document.getElementById('createModal').style.display = 'block';
         });
+
+        document.getElementById('createCloseBtn').addEventListener('click', function() {
+            document.getElementById('createModal').style.display = 'none';
+        });
+
+        document.getElementById('logoutBtn').addEventListener('click', function() {
+            fetch('/logout')
+            .then(() => {
+                window.location.href = '/';
+            })
+            .catch(error => {
+                console.error('Logout error:', error);
+            });
+        });
+        
+        
     });
 </script>
-
-<html>
-<head>
-    <title>SQUID UI</title>
-    <link href="./templates/styles.css" rel="stylesheet">
-</head>
-<body>
-
-<h1>Squid Users:</h1>
-<a href="/logout">Logout</a>
-
-<h2>Clients</h2>
-
-<table>
-    <tr>
-        <th>Name</th>
-        <th>Actions</th>
-    </tr>
-    {{range .users}}
-    <tr>
-        <td>{{.Name}}</td>
-        <td>
-            <label class="switch">
-                <input type="checkbox" {{if .IsActive}}checked{{end}} data-username="{{.Name}}">
-                <span class="slider round"></span>
-            </label>
-            <button>Edit</button>
-            <button>Delete</button>
-        </td>
-    </tr>
-    {{end}}
-</table>
-
-<button id="createUserBtn">+ New</button>
-
-
-<footer>
-    Made by ckazi - <a href="https://github.com/ckazi">GitHub</a>
-</footer>
-
-
-<div id="editModal" style="display:none; position:fixed; top:20%; left:30%; width:40%; padding:20px; background-color:white; border:1px solid black;">
-    <h2>Edit User</h2>
-    <label>
-        Username:
-        <input type="text" id="editUsername" readonly />
-    </label>
-    <br>
-    <label>
-        Password:
-        <input type="password" id="editPassword" />
-    </label>
-    <br><br>
-    <button id="saveBtn">Save</button>
-    <button id="closeBtn">Close</button>
-</div>
-
-<div id="createModal" style="display:none;">
-    <label>Username:</label>
-    <input type="text" id="createUsername">
-    <label>Password:</label>
-    <input type="password" id="createPassword">
-    <button id="createSaveBtn">Save</button>
-    <button id="createCloseBtn">Close</button>
-</div>
-
-
 
 </body>
 </html>

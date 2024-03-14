@@ -1,15 +1,13 @@
-FROM ubuntu:latest
+FROM alpine:latest
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y apache2-utils
+RUN apk update && apk add --no-cache apache2-utils && rm -rf /var/cache/apk/*
 
 COPY squid-easy ./squid-easy
 COPY templates ./templates/
 COPY config ./config/
 
-RUN apt-get clean && rm -rf /var/lib/apt/lists/*
-
 RUN chmod +x ./squid-easy
 
-ENTRYPOINT ["./squid-easy"]
+CMD ["./squid-easy"]

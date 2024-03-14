@@ -37,7 +37,8 @@ th {
 }
 
 button {
-    background-color: #4CAF50;
+    //background-color: #4CAF50;
+    background-color: #2196F3;
     color: white;
     padding: 10px 20px;
     border: none;
@@ -52,7 +53,7 @@ button {
 }
 
 button:hover {
-    background-color: #45a049;
+    background-color: #1e6faf;
 }
 
 .disconnect-btn {
@@ -82,6 +83,9 @@ footer {
     margin-top: 40px;
     font-size: 14px;
     color: #888;
+    text-align: center;
+    width: 100%;
+    display: block;
 }
 
 footer a {
@@ -139,4 +143,16 @@ border-radius: 34px;
 
 .slider.round:before {
 border-radius: 50%;
+}
+
+.actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.header-actions {
+    margin-top: 30px;
+    display: flex;
+    gap: 30px;
 }
