@@ -30,7 +30,7 @@ services:
      - GIN_MODE=release
      - SQUID_PASSWORD=SET_YOUR_PASS
    volumes:
-     - ./config:/app/config:rw
+     - ./config/squid_passwd:/app/config/squid_passwd:rw
    restart: always
 
   squid:
