@@ -39,5 +39,6 @@ services:
     ports:
       - "51822:3128"
     volumes:
-      - ./config:/etc/squid:ro
+      - ./config/squid.conf:/etc/squid/squid.conf:ro
+      - ./config/squid_passwd:/etc/squid/squid_passwd:ro
     restart: always
