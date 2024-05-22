@@ -39,17 +39,14 @@ To automatically install & run wg-easy and squid-easy simply run:
 <pre>
 $ git clone https://github.com/ckazi/squid-easy
 $ cd squid-easy
-> 💡 Replace `WG_HOST` in docker-compose.yml file with a IP  of your server.
-> 💡 Replace `PASSWORD` in docker-compose.yml file with a password to log in on the Web UI for WireGuard.
 > 💡 Replace `SQUID_ADMIN_PASSWORD` in docker-compose.yml file with a password to log in on the Web UI for Squid.
 $ docker-compose up -d
 </pre>
 
-In this docker-compose file, 3 services are described (wg-easy, squid-easy, and squid), and after launching, you will have access to both WireGuard with UI and Squid with UI.
+In this docker-compose file, 2 services are described (squid-easy, and squid), and after launching, you will have access to both WireGuard with UI and Squid with UI.
 IMPORTANT! Before launching, edit the docker-compose.yml to your preferences (IP, UI password).
 
 The Squid Web UI will now be available on `http://0.0.0.0:51823`.
-The WireGuard Web UI will now be available on `http://0.0.0.0:51821`.
 
 ### 3. Sponsor
 
