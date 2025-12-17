@@ -31,6 +31,7 @@
 
 <div class="header-actions">
     <button id="createUserBtn">+ New</button>
+    <button id="statisticsBtn">Statistics</button>
     <button id="logoutBtn">Logout</button>
 </div>
 
@@ -157,8 +158,12 @@
                 console.error('Logout error:', error);
             });
         });
-        
-        
+
+        document.getElementById('statisticsBtn').addEventListener('click', function() {
+            window.location.href = '/statistics';
+        });
+
+
     });
 </script>
 

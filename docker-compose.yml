@@ -12,6 +12,7 @@ services:
      - SQUID_PASSWORD=SET_YOUR_PASS
    volumes:
      - ./config/squid_passwd:/app/config/squid_passwd:rw
+     - squid-logs:/var/log/squid:ro
    restart: always
 
   squid:
@@ -22,4 +23,8 @@ services:
     volumes:
       - ./config/squid.conf:/etc/squid/squid.conf:ro
       - ./config/squid_passwd:/etc/squid/squid_passwd:ro
+      - squid-logs:/var/log/squid:rw
     restart: always
+
+volumes:
+  squid-logs:

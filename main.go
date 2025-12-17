@@ -5,9 +5,13 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
+	"sort"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -16,6 +20,33 @@ type User struct {
 	Name     string
 	pass     string
 	IsActive bool
+}
+
+type AccessLog struct {
+	Timestamp   time.Time
+	ResponseTime int64
+	ClientIP    string
+	StatusCode  string
+	BytesSent   int64
+	Method      string
+	URL         string
+	Username    string
+	Hierarchy   string
+	ContentType string
+}
+
+type UserStats struct {
+	Username      string         `json:"username"`
+	TotalRequests int            `json:"total_requests"`
+	TotalBytes    int64          `json:"total_bytes"`
+	LastSeen      time.Time      `json:"last_seen"`
+	TopDomains    []DomainStat   `json:"top_domains"`
+}
+
+type DomainStat struct {
+	Domain   string `json:"domain"`
+	Requests int    `json:"requests"`
+	Bytes    int64  `json:"bytes"`
 }
 
 func BasicAuth(adminPassword string) gin.HandlerFunc {
@@ -141,6 +172,108 @@ func toggleUser(username, filePath string) error {
 	return nil
 }
 
+func parseAccessLog(line string) (*AccessLog, error) {
+	fields := strings.Fields(line)
+	if len(fields) < 10 {
+		return nil, errors.New("invalid log format")
+	}
+
+	timestampFloat, err := strconv.ParseFloat(fields[0], 64)
+	if err != nil {
+		return nil, err
+	}
+	timestamp := time.Unix(int64(timestampFloat), 0)
+
+	responseTime, _ := strconv.ParseInt(fields[1], 10, 64)
+	bytesSent, _ := strconv.ParseInt(fields[4], 10, 64)
+
+	return &AccessLog{
+		Timestamp:    timestamp,
+		ResponseTime: responseTime,
+		ClientIP:     fields[2],
+		StatusCode:   fields[3],
+		BytesSent:    bytesSent,
+		Method:       fields[5],
+		URL:          fields[6],
+		Username:     fields[7],
+		Hierarchy:    fields[8],
+		ContentType:  fields[9],
+	}, nil
+}
+
+func extractDomain(rawURL string) string {
+	parsedURL, err := url.Parse(rawURL)
+	if err != nil {
+		return rawURL
+	}
+	return parsedURL.Host
+}
+
+func getStatistics(logPath string) (map[string]*UserStats, error) {
+	file, err := os.Open(logPath)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	stats := make(map[string]*UserStats)
+	domainStats := make(map[string]map[string]*DomainStat)
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		logEntry, err := parseAccessLog(scanner.Text())
+		if err != nil {
+			continue
+		}
+
+		username := logEntry.Username
+		if username == "-" {
+			continue
+		}
+
+		if _, exists := stats[username]; !exists {
+			stats[username] = &UserStats{
+				Username:   username,
+				LastSeen:   logEntry.Timestamp,
+				TopDomains: []DomainStat{},
+			}
+			domainStats[username] = make(map[string]*DomainStat)
+		}
+
+		userStat := stats[username]
+		userStat.TotalRequests++
+		userStat.TotalBytes += logEntry.BytesSent
+		if logEntry.Timestamp.After(userStat.LastSeen) {
+			userStat.LastSeen = logEntry.Timestamp
+		}
+
+		domain := extractDomain(logEntry.URL)
+		if domain != "" {
+			if _, exists := domainStats[username][domain]; !exists {
+				domainStats[username][domain] = &DomainStat{Domain: domain}
+			}
+			domainStats[username][domain].Requests++
+			domainStats[username][domain].Bytes += logEntry.BytesSent
+		}
+	}
+
+	for username, userStat := range stats {
+		var domains []DomainStat
+		for _, domainStat := range domainStats[username] {
+			domains = append(domains, *domainStat)
+		}
+		sort.Slice(domains, func(i, j int) bool {
+			return domains[i].Requests > domains[j].Requests
+		})
+		if len(domains) > 10 {
+			domains = domains[:10]
+		}
+		userStat.TopDomains = domains
+	}
+
+	return stats, scanner.Err()
+}
+
 func main() {
 	r := gin.Default()
 	r.LoadHTMLGlob("templates/*")
@@ -161,6 +294,10 @@ func main() {
 		}
 
 		c.HTML(http.StatusOK, "clients.html", gin.H{"users": users})
+	})
+
+	r.GET("/statistics", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "statistics.html", nil)
 	})
 
 	r.GET("/logout", func(c *gin.Context) {
@@ -228,6 +365,42 @@ func main() {
 		}
 
 		c.Status(http.StatusOK)
+	})
+
+	r.GET("/api/statistics", func(c *gin.Context) {
+		stats, err := getStatistics("/var/log/squid/access.log")
+		if err != nil {
+			c.JSON(http.StatusOK, gin.H{"stats": []UserStats{}})
+			return
+		}
+
+		var statsList []UserStats
+		for _, stat := range stats {
+			statsList = append(statsList, *stat)
+		}
+
+		sort.Slice(statsList, func(i, j int) bool {
+			return statsList[i].TotalRequests > statsList[j].TotalRequests
+		})
+
+		c.JSON(http.StatusOK, gin.H{"stats": statsList})
+	})
+
+	r.GET("/api/statistics/:username", func(c *gin.Context) {
+		username := c.Param("username")
+		stats, err := getStatistics("/var/log/squid/access.log")
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get statistics"})
+			return
+		}
+
+		userStat, exists := stats[username]
+		if !exists {
+			c.JSON(http.StatusNotFound, gin.H{"error": "User statistics not found"})
+			return
+		}
+
+		c.JSON(http.StatusOK, userStat)
 	})
 
 	r.Run(":8080")

@@ -1,0 +1,206 @@
+<html>
+<head>
+    <title>User Statistics - SQUID UI</title>
+    <link href="./templates/styles.css" rel="stylesheet">
+    <style>
+        .stats-container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        .user-card {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .user-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #eee;
+        }
+        .user-name {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .stat-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #007bff;
+        }
+        .domains-section {
+            margin-top: 20px;
+        }
+        .domains-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        .domain-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            background: #f8f9fa;
+            margin-bottom: 5px;
+            border-radius: 4px;
+        }
+        .domain-name {
+            color: #495057;
+            font-weight: 500;
+        }
+        .domain-stats {
+            color: #6c757d;
+            font-size: 14px;
+        }
+        .no-stats {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+            font-size: 18px;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 18px;
+            color: #666;
+        }
+        .header-nav {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .btn-back {
+            background-color: #6c757d;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn-back:hover {
+            background-color: #5a6268;
+        }
+    </style>
+</head>
+<body>
+
+<h1>User Statistics</h1>
+
+<div class="header-nav">
+    <a href="/" class="btn-back">← Back to Users</a>
+</div>
+
+<div id="statsContainer" class="stats-container">
+    <div class="loading">Loading statistics...</div>
+</div>
+
+<footer>
+    Made by ckazi - <a href="https://github.com/ckazi" target="_blank">GitHub</a>
+</footer>
+
+<script>
+    function formatBytes(bytes) {
+        if (bytes === 0) return '0 B';
+        const k = 1024;
+        const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+    }
+
+    function formatDate(dateString) {
+        const date = new Date(dateString);
+        return date.toLocaleString();
+    }
+
+    function loadStatistics() {
+        fetch('/api/statistics')
+            .then(response => response.json())
+            .then(data => {
+                const container = document.getElementById('statsContainer');
+
+                if (!data.stats || data.stats.length === 0) {
+                    container.innerHTML = '<div class="no-stats">No statistics available yet. Users need to make requests through the proxy first.</div>';
+                    return;
+                }
+
+                let html = '';
+                data.stats.forEach(userStat => {
+                    html += `
+                        <div class="user-card">
+                            <div class="user-header">
+                                <div class="user-name">${userStat.username}</div>
+                            </div>
+                            <div class="stats-grid">
+                                <div class="stat-item">
+                                    <div class="stat-label">Total Requests</div>
+                                    <div class="stat-value">${userStat.total_requests.toLocaleString()}</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-label">Total Traffic</div>
+                                    <div class="stat-value">${formatBytes(userStat.total_bytes)}</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-label">Last Seen</div>
+                                    <div class="stat-value" style="font-size: 14px;">${formatDate(userStat.last_seen)}</div>
+                                </div>
+                            </div>
+                            ${userStat.top_domains && userStat.top_domains.length > 0 ? `
+                            <div class="domains-section">
+                                <div class="domains-title">Top 10 Visited Domains</div>
+                                ${userStat.top_domains.map(domain => `
+                                    <div class="domain-item">
+                                        <span class="domain-name">${domain.domain}</span>
+                                        <span class="domain-stats">${domain.requests} requests | ${formatBytes(domain.bytes)}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                            ` : ''}
+                        </div>
+                    `;
+                });
+
+                container.innerHTML = html;
+            })
+            .catch(error => {
+                console.error('Error loading statistics:', error);
+                document.getElementById('statsContainer').innerHTML =
+                    '<div class="no-stats">Error loading statistics. Please try again later.</div>';
+            });
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        loadStatistics();
+        // Refresh statistics every 30 seconds
+        setInterval(loadStatistics, 30000);
+    });
+</script>
+
+</body>
+</html>
